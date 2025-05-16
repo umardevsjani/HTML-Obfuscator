@@ -42,5 +42,4 @@ def obfuscate_html(code: str = Query(None)):
         r'<!-- Obfuscated at \1 on HTML-OBFUSCATOR FastAPI -->',
         obfuscated_code
     )
-
     return JSONResponse(content={"obfuscated_code": obfuscated_code})
