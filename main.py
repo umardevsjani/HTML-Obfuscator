@@ -1,12 +1,15 @@
 from fastapi import FastAPI, Query, Request, HTTPException
 from fastapi.responses import JSONResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
+from pathlib import Path
 import requests
 from bs4 import BeautifulSoup
 import re
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+
+BASE_DIR = Path(__file__).parent
+templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
 @app.get("/", response_class=HTMLResponse)
 async def home(request: Request):
