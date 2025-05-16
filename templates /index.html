@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>HTML Obfuscator API Documentation</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 2rem; line-height: 1.6; max-width: 900px; }
+        code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; }
+        pre { background: #eee; padding: 1rem; border-radius: 6px; overflow-x: auto; }
+        h1, h2, h3 { color: #333; }
+        a { color: #0066cc; text-decoration: none; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <h1>HTML Obfuscator API</h1>
+    <p>This API obfuscates your HTML code by removing scripts, comments, and applying obfuscation techniques to make the code less readable.</p>
+
+    <h2>Endpoint</h2>
+    <p><code>GET /html-obfuscator?code=&lt;your-html-code&gt;</code></p>
+
+    <h2>How to Use</h2>
+    <ol>
+        <li>URL-encode your HTML code to be obfuscated.</li>
+        <li>Send a GET request to <code>/html-obfuscator</code> with the <code>code</code> query parameter set to your encoded HTML.</li>
+        <li>Receive the obfuscated HTML as plain text in the response.</li>
+    </ol>
+
+    <h3>Example Request</h3>
+    <pre><code>GET /html-obfuscator?code=%3C!DOCTYPE%20html%3E%3Chtml%3E%3Chead%3E%3Ctitle%3EMy%20Page%3C%2Ftitle%3E%3C%2Fhead%3E%3Cbody%3E%3Ch1%3EHello%2C%20world!%3C%2Fh1%3E%3Cp%3EThis%20is%20a%20short%20HTML%20example.%3C%2Fp%3E%3C%2Fbody%3E%3C%2Fhtml%3E</code></pre>
+
+    <h3>Example Response</h3>
+    <pre><code>&lt;!-- obfuscated html here --&gt;</code></pre>
+
+    <h2>Features</h2>
+    <ul>
+        <li>Removes &lt;script&gt; tags from the HTML.</li>
+        <li>Removes HTML comments.</li>
+        <li>Obfuscates the HTML code to make it less readable.</li>
+        <li>Easy integration via simple GET requests.</li>
+    </ul>
+
+    <h2>Notes</h2>
+    <ul>
+        <li>Make sure to URL-encode the HTML when sending it as a query parameter.</li>
+        <li>Obfuscation is done automatically on the server side.</li>
+        <li>Large HTML input may take longer to process due to network latency.</li>
+    </ul>
+</body>
+</html>
