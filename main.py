@@ -1,24 +1,20 @@
-from fastapi import FastAPI, Query, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Query
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 import requests
 from bs4 import BeautifulSoup
 import re
+import os
 
 app = FastAPI()
 
-@app.get("/")
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
 async def home():
-    return {
-        "endpoints": {
-            "/html-obfuscator": {
-                "method": "GET",
-                "params": {
-                    "code": "string - HTML code to obfuscate (required)"
-                },
-                "description": "Obfuscates the given HTML code and returns the obfuscated version."
-            }
-        }
-    }
+    with open(os.path.join("static", "index.html"), "r", encoding="utf-8") as f:
+        html_content = f.read()
+    return HTMLResponse(content=html_content)
 
 @app.get("/html-obfuscator")
 def obfuscate_html(code: str = Query(None)):
