@@ -3,20 +3,19 @@ from fastapi.responses import PlainTextResponse, HTMLResponse
 from fastapi.templating import Jinja2Templates
 import requests
 from bs4 import BeautifulSoup
-import logging
-
-logging.basicConfig(level=logging.DEBUG)
+import os
 
 app = FastAPI()
-templates = Jinja2Templates(directory="templates")
+
+base_dir = os.path.dirname(os.path.abspath(__file__))
+templates = Jinja2Templates(directory=os.path.join(base_dir, "templates"))
 
 @app.get("/", response_class=HTMLResponse)
 def home(request: Request):
     try:
         return templates.TemplateResponse("index.html", {"request": request})
     except Exception as e:
-        logging.exception("Error rendering template")
-        return PlainTextResponse(f"Error: {e}", status_code=500)
+        return PlainTextResponse(f"Template Error: {e}", status_code=500)
 
 @app.get("/html-obfuscator", response_class=PlainTextResponse)
 def obfuscate_html(code: str = Query(...)):
