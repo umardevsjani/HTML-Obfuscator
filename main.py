@@ -1,47 +1,19 @@
-from fastapi import FastAPI, Query
-from fastapi.responses import HTMLResponse, Response
-from fastapi.staticfiles import StaticFiles
-import requests
-from bs4 import BeautifulSoup
-import re
-import os
-import json
+from fastapi import Form
+from fastapi.responses import StreamingResponse
+from io import BytesIO
 
-app = FastAPI()
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-
-@app.get("/", response_class=HTMLResponse)
-async def home():
-    try:
-        with open(os.path.join("static", "index.html"), "r", encoding="utf-8") as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    except FileNotFoundError:
-        return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
-    except Exception as e:
-        return HTMLResponse(content=f"<h1>Unexpected error: {str(e)}</h1>", status_code=500)
-
-
-@app.get("/html-obfuscator")
-def obfuscate_html(code: str = Query(None)):
-    if not code:
-        return Response(
-            content=json.dumps({"error": "Please provide 'code' parameter for obfuscation."}, indent=4, ensure_ascii=False),
-            media_type="application/json"
-        )
-
+@app.post("/obfuscate-download")
+def obfuscate_download(code: str = Form(...)):
     try:
         session = requests.Session()
 
-        # Step 1: GET to initialize session and cookies
+        # Session setup
         init_url = "https://www.phpkobo.com/html-obfuscator"
         session.get(init_url, headers={
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+            'User-Agent': 'Mozilla/5.0',
+            'Accept': '*/*'
         })
 
-        # Step 2: POST with data
         data = {
             'cmd': 'obfuscate',
             'icode': code,
@@ -51,65 +23,38 @@ def obfuscate_html(code: str = Query(None)):
         }
 
         headers = {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            'User-Agent': 'Mozilla/5.0',
             'Referer': init_url,
-            'Content-Type': 'application/x-www-form-urlencoded',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+            'Content-Type': 'application/x-www-form-urlencoded'
         }
 
         response = session.post(init_url, data=data, headers=headers)
         response.raise_for_status()
 
-        # Step 3: Extract obfuscated code
         soup = BeautifulSoup(response.text, 'html.parser')
         textarea = soup.find('textarea', {'name': 'ocode'})
-        if not textarea:
-            return Response(
-                content=json.dumps({"error": "Obfuscated code not found in response."}, indent=4, ensure_ascii=False),
-                media_type="application/json",
-                status_code=500
-            )
-
         obfuscated_code = textarea.get_text(strip=False)
 
-        # Replace source comment (optional branding)
+        # Branding replace
         obfuscated_code = re.sub(
             r'<!-- Obfuscated at (.*?) on https://www\.phpkobo\.com/html-obfuscator -->',
             r'<!-- Obfuscated at \1 on HTML-OBFUSCATOR FastAPI -->',
             obfuscated_code
         )
 
-        return Response(
-            content=json.dumps({"obfuscated_code": obfuscated_code}, indent=4, ensure_ascii=False),
-            media_type="application/json"
+        # Create downloadable stream
+        file_stream = BytesIO(obfuscated_code.encode('utf-8'))
+        return StreamingResponse(
+            file_stream,
+            media_type="application/octet-stream",
+            headers={
+                "Content-Disposition": "attachment; filename=obfuscated_output.html"
+            }
         )
 
-    except requests.RequestException as req_err:
-        return Response(
-            content=json.dumps({"error": f"Request failed: {str(req_err)}"}, indent=4, ensure_ascii=False),
-            media_type="application/json",
-            status_code=502
-        )
     except Exception as e:
         return Response(
-            content=json.dumps({"error": f"Unexpected server error: {str(e)}"}, indent=4, ensure_ascii=False),
-            media_type="application/json",
+            content=f"Error: {str(e)}",
+            media_type="text/plain",
             status_code=500
         )
-
-
-@app.get("/preview", response_class=HTMLResponse)
-def preview(code: str = Query(...)):
-    html_template = f"""
-    <!DOCTYPE html>
-    <html lang="en">
-    <head>
-        <meta charset="UTF-8">
-        <title>Obfuscated Code Preview</title>
-    </head>
-    <body>
-        {code}
-    </body>
-    </html>
-    """
-    return HTMLResponse(content=html_template)
