@@ -1,122 +1,41 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>API Documentation - HTML Obfuscator</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap');
-
-        body {
-            font-family: 'Poppins', sans-serif;
-            scroll-behavior: smooth;
-            opacity: 0;
-            animation: fadeIn 0.5s ease-in-out forwards;
-        }
-
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
-        }
-
-        .gradient-title {
-            background: linear-gradient(90deg, #3b82f6, #60a5fa, #93c5fd);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-    </style>
+    <title>HTML Obfuscator</title>
 </head>
+<body>
+    <h1>Obfuscate Your HTML</h1>
+    <form id="obfuscateForm">
+        <textarea name="code" rows="10" cols="60" placeholder="Paste your HTML/JS code here..."></textarea><br><br>
+        <button type="submit">Obfuscate & Download</button>
+    </form>
 
-<body class="bg-gray-900 text-gray-300">
-    <div class="container mx-auto py-10 px-4">
-        <header class="mb-10 text-center">
-            <h1 class="text-4xl font-bold gradient-title">HTML Obfuscator API</h1>
-            <p class="text-gray-500 mt-4">Easily obfuscate your HTML code with our API.</p>
-        </header>
-
-        <section class="mb-12">
-            <h2 class="text-2xl font-semibold text-gray-100">Endpoints</h2>
-            <p class="text-gray-500 mt-2">Click on any endpoint to learn more.</p>
-            <div class="mt-6 space-y-6">
-                <div class="bg-gray-800 p-6 rounded-lg">
-                    <h3 class="text-xl font-bold text-gray-100">Home</h3>
-                    <p class="text-gray-400 mt-2">Displays the homepage with an HTML interface.</p>
-                    <a href="/" class="text-blue-400 hover:text-blue-300 underline mt-4 inline-block">GET /</a>
-                </div>
-                <div class="bg-gray-800 p-6 rounded-lg">
-                    <h3 class="text-xl font-bold text-gray-100">HTML Obfuscator</h3>
-                    <p class="text-gray-400 mt-2">Obfuscates the provided HTML code.</p>
-                    <a href="/html-obfuscator?code=" class="text-blue-400 hover:text-blue-300 underline mt-4 inline-block">GET /html-obfuscator</a>
-                </div>
-            </div>
-        </section>
-
-        <section class="mb-12">
-            <h2 class="text-2xl font-semibold text-gray-100">Example Request</h2>
-            <p class="text-gray-400 mt-2">Use this example to test the HTML Obfuscator API.</p>
-            <div class="bg-gray-800 p-6 rounded-lg mt-6">
-                <pre class="bg-gray-700 text-gray-200 p-4 rounded-lg overflow-auto">
-curl -X GET "http://localhost:8000/html-obfuscator?code=<html_code>" \\
-     -H "accept: application/json"
-                </pre>
-            </div>
-        </section>
-
-        <section class="mb-12">
-            <h2 class="text-2xl font-semibold text-gray-100">Response Example</h2>
-            <p class="text-gray-400 mt-2">Here's an example response from the API.</p>
-            <div class="bg-gray-800 p-6 rounded-lg mt-6">
-                <pre class="bg-gray-700 text-gray-200 p-4 rounded-lg overflow-auto">
-{
-    "obfuscated_code": "&lt;!-- Obfuscated Code Here --&gt;"
-}
-                </pre>
-            </div>
-        </section>
-
-        <section class="mb-12">
-            <h2 class="text-2xl font-semibold text-gray-100">Error Handling</h2>
-            <p class="text-gray-400 mt-2">Possible errors and their responses.</p>
-            <div class="bg-gray-800 p-6 rounded-lg mt-6">
-                <h3 class="text-lg font-bold text-gray-100">Missing Code Parameter</h3>
-                <p class="text-gray-400 mt-2">If the code parameter is missing, the API returns:</p>
-                <pre class="bg-gray-700 text-gray-200 p-4 rounded-lg overflow-auto">
-{
-    "error": "Please provide code parameter for obfuscation."
-}
-                </pre>
-            </div>
-        </section>
-
-        <section class="mb-12">
-            <h2 class="text-2xl font-semibold text-gray-100">Features</h2>
-            <ul class="list-disc list-inside mt-4 text-gray-400 space-y-2">
-                <li>Built with <span class="text-gray-300 font-bold">FastAPI</span> for high performance</li>
-                <li>Interactive API Documentation</li>
-                <li>Easily obfuscates HTML code</li>
-                <li>Simple and intuitive endpoints</li>
-                <li>Supports JSON responses</li>
-                <li>Lightweight and fast</li>
-                <li>Made for developers</li>
-            </ul>
-        </section>
-
-        <footer class="text-center border-t border-gray-700 pt-6 mt-12">
-  <p class="text-gray-500">
-    Made with ❤️ <a href="https://kaizenji-info.pages.dev" class="text-blue-400 hover:underline">Kaizenji</a>.<br>
-    &copy; <span id="year"></span> All rights reserved.
-  </p>
-</footer>
-    </div>
     <script>
-    document.getElementById("year").textContent = new Date().getFullYear();
-</script>
-</body>
+        document.getElementById("obfuscateForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
 
+            const formData = new FormData(this);
+            const response = await fetch("/obfuscate-download", {
+                method: "POST",
+                body: formData
+            });
+
+            if (!response.ok) {
+                alert("Obfuscation failed.");
+                return;
+            }
+
+            const blob = await response.blob();
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            a.download = "obfuscated_output.html";
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            window.URL.revokeObjectURL(url);
+        });
+    </script>
+</body>
 </html>
