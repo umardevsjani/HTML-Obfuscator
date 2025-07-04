@@ -5,37 +5,10 @@
     <title>HTML Obfuscator</title>
 </head>
 <body>
-    <h1>Obfuscate Your HTML</h1>
-    <form id="obfuscateForm">
-        <textarea name="code" rows="10" cols="60" placeholder="Paste your HTML/JS code here..."></textarea><br><br>
+    <h2>HTML/JS Code Obfuscator</h2>
+    <form id="obfuscateForm" method="post" action="/obfuscate">
+        <textarea name="code" rows="10" cols="80" placeholder="Paste your HTML/JS code here..." required></textarea><br><br>
         <button type="submit">Obfuscate & Download</button>
     </form>
-
-    <script>
-        document.getElementById("obfuscateForm").addEventListener("submit", async function (e) {
-            e.preventDefault();
-
-            const formData = new FormData(this);
-            const response = await fetch("/obfuscate-download", {
-                method: "POST",
-                body: formData
-            });
-
-            if (!response.ok) {
-                alert("Obfuscation failed.");
-                return;
-            }
-
-            const blob = await response.blob();
-            const url = window.URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = "obfuscated_output.html";
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            window.URL.revokeObjectURL(url);
-        });
-    </script>
 </body>
 </html>
