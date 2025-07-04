@@ -1,5 +1,5 @@
 from fastapi import FastAPI, Query
-from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 import requests
 from bs4 import BeautifulSoup
@@ -9,7 +9,9 @@ import json
 
 app = FastAPI()
 
+# Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
@@ -22,12 +24,13 @@ async def home():
     except Exception as e:
         return HTMLResponse(content=f"<h1>Unexpected error: {str(e)}</h1>", status_code=500)
 
+
 @app.get("/html-obfuscator")
 def obfuscate_html(code: str = Query(None)):
     if not code:
-        return JSONResponse(
-            content={"error": "Please provide 'code' parameter for obfuscation."},
-            status_code=400
+        return Response(
+            content=json.dumps({"error": "Please provide 'code' parameter for obfuscation."}, indent=4),
+            media_type="application/json"
         )
 
     data = {
@@ -54,33 +57,41 @@ def obfuscate_html(code: str = Query(None)):
         textarea = soup.find('textarea', {'name': 'ocode'})
 
         if not textarea:
-            return JSONResponse(
-                content={"error": "Could not find obfuscated code in response."},
+            return Response(
+                content=json.dumps({"error": "Could not find obfuscated code in response."}, indent=4),
+                media_type="application/json",
                 status_code=500
             )
 
         obfuscated_code = textarea.text
 
+        # Branding replace (optional)
         obfuscated_code = re.sub(
             r'<!-- Obfuscated at (.*?) on https://www\.phpkobo\.com/html-obfuscator -->',
             r'<!-- Obfuscated at \1 on HTML-OBFUSCATOR FastAPI -->',
             obfuscated_code
         )
 
-        # RETURN RAW HTML TEXT, not JSON (safest)
-        return PlainTextResponse(content=obfuscated_code, media_type="text/html")
+        # Pretty-print, unescaped output
+        formatted_json = json.dumps(
+            {"obfuscated_code": obfuscated_code},
+            indent=4,
+            ensure_ascii=False,       # <-- Don't escape characters like <, >, /
+            separators=(',', ': ')    # <-- Clean formatting
+        )
 
-        # Or if you still want JSON:
-        # return JSONResponse(content={"obfuscated_code": obfuscated_code})
+        return Response(content=formatted_json, media_type="application/json")
 
     except requests.RequestException as req_err:
-        return JSONResponse(
-            content={"error": f"Request to obfuscator failed: {str(req_err)}"},
+        return Response(
+            content=json.dumps({"error": f"Request to obfuscator failed: {str(req_err)}"}, indent=4),
+            media_type="application/json",
             status_code=502
         )
 
     except Exception as e:
-        return JSONResponse(
-            content={"error": f"Unexpected server error: {str(e)}"},
+        return Response(
+            content=json.dumps({"error": f"Unexpected server error: {str(e)}"}, indent=4),
+            media_type="application/json",
             status_code=500
         )
