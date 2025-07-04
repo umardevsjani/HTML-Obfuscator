@@ -8,8 +8,6 @@ import os
 import json
 
 app = FastAPI()
-
-# Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
@@ -33,51 +31,60 @@ def obfuscate_html(code: str = Query(None)):
             media_type="application/json"
         )
 
-    data = {
-        'cmd': 'obfuscate',
-        'icode': code,
-        'remove-script': 'y',
-        'remove-comment': 'y',
-        'ocode': ''
-    }
-
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 '
-                      '(KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36',
-        'Origin': 'https://www.phpkobo.com',
-        'Referer': 'https://www.phpkobo.com/html-obfuscator',
-        'Content-Type': 'application/x-www-form-urlencoded'
-    }
-
     try:
-        response = requests.post('https://www.phpkobo.com/html-obfuscator', data=data, headers=headers)
-        response.raise_for_status()
+        # Start a session like browser
+        session = requests.Session()
 
-        soup = BeautifulSoup(response.text, 'html.parser')
+        # Step 1: GET the page to initialize cookies
+        init_url = "https://www.phpkobo.com/html-obfuscator"
+        session.get(init_url, headers={
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'
+        })
+
+        # Step 2: POST the form with code to be obfuscated
+        data = {
+            'cmd': 'obfuscate',
+            'icode': code,
+            'remove-script': 'y',
+            'remove-comment': 'y',
+            'ocode': ''
+        }
+
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+            'Referer': 'https://www.phpkobo.com/html-obfuscator',
+            'Content-Type': 'application/x-www-form-urlencoded'
+        }
+
+        post_response = session.post(init_url, data=data, headers=headers)
+        post_response.raise_for_status()
+
+        # Step 3: Parse the obfuscated code from response
+        soup = BeautifulSoup(post_response.text, 'html.parser')
         textarea = soup.find('textarea', {'name': 'ocode'})
 
         if not textarea:
             return Response(
-                content=json.dumps({"error": "Could not find obfuscated code in response."}, indent=4),
+                content=json.dumps({"error": "Obfuscated code not found in response."}, indent=4),
                 media_type="application/json",
                 status_code=500
             )
 
         obfuscated_code = textarea.text
 
-        # Branding replace (optional)
+        # Optional branding
         obfuscated_code = re.sub(
             r'<!-- Obfuscated at (.*?) on https://www\.phpkobo\.com/html-obfuscator -->',
             r'<!-- Obfuscated at \1 on HTML-OBFUSCATOR FastAPI -->',
             obfuscated_code
         )
 
-        # Pretty-print, unescaped output
+        # Final pretty, unescaped JSON
         formatted_json = json.dumps(
             {"obfuscated_code": obfuscated_code},
             indent=4,
-            ensure_ascii=False,       # <-- Don't escape characters like <, >, /
-            separators=(',', ': ')    # <-- Clean formatting
+            ensure_ascii=False,
+            separators=(',', ': ')
         )
 
         return Response(content=formatted_json, media_type="application/json")
@@ -88,7 +95,6 @@ def obfuscate_html(code: str = Query(None)):
             media_type="application/json",
             status_code=502
         )
-
     except Exception as e:
         return Response(
             content=json.dumps({"error": f"Unexpected server error: {str(e)}"}, indent=4),
