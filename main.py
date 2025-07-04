@@ -27,21 +27,21 @@ async def home():
 def obfuscate_html(code: str = Query(None)):
     if not code:
         return Response(
-            content=json.dumps({"error": "Please provide 'code' parameter for obfuscation."}, indent=4),
+            content=json.dumps({"error": "Please provide 'code' parameter for obfuscation."}, indent=4, ensure_ascii=False),
             media_type="application/json"
         )
 
     try:
         session = requests.Session()
 
-        # Step 1: GET to initialize cookies/session
+        # Step 1: GET to initialize session and cookies
         init_url = "https://www.phpkobo.com/html-obfuscator"
         session.get(init_url, headers={
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
         })
 
-        # Step 2: POST with code
+        # Step 2: POST with data
         data = {
             'cmd': 'obfuscate',
             'icode': code,
@@ -60,20 +60,19 @@ def obfuscate_html(code: str = Query(None)):
         response = session.post(init_url, data=data, headers=headers)
         response.raise_for_status()
 
-        # Step 3: Parse obfuscated code from textarea
+        # Step 3: Extract obfuscated code
         soup = BeautifulSoup(response.text, 'html.parser')
         textarea = soup.find('textarea', {'name': 'ocode'})
-
         if not textarea:
             return Response(
-                content=json.dumps({"error": "Obfuscated code not found in response."}, indent=4),
+                content=json.dumps({"error": "Obfuscated code not found in response."}, indent=4, ensure_ascii=False),
                 media_type="application/json",
                 status_code=500
             )
 
         obfuscated_code = textarea.get_text(strip=False)
 
-        # Branding update (optional)
+        # Replace source comment (optional branding)
         obfuscated_code = re.sub(
             r'<!-- Obfuscated at (.*?) on https://www\.phpkobo\.com/html-obfuscator -->',
             r'<!-- Obfuscated at \1 on HTML-OBFUSCATOR FastAPI -->',
@@ -87,19 +86,30 @@ def obfuscate_html(code: str = Query(None)):
 
     except requests.RequestException as req_err:
         return Response(
-            content=json.dumps({"error": f"Request failed: {str(req_err)}"}, indent=4),
+            content=json.dumps({"error": f"Request failed: {str(req_err)}"}, indent=4, ensure_ascii=False),
             media_type="application/json",
             status_code=502
         )
     except Exception as e:
         return Response(
-            content=json.dumps({"error": f"Unexpected server error: {str(e)}"}, indent=4),
+            content=json.dumps({"error": f"Unexpected server error: {str(e)}"}, indent=4, ensure_ascii=False),
             media_type="application/json",
             status_code=500
         )
 
 
-# Optional: Preview route for testing obfuscated HTML in browser
 @app.get("/preview", response_class=HTMLResponse)
 def preview(code: str = Query(...)):
-    return HTMLResponse(content=code)
+    html_template = f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <title>Obfuscated Code Preview</title>
+    </head>
+    <body>
+        {code}
+    </body>
+    </html>
+    """
+    return HTMLResponse(content=html_template)
