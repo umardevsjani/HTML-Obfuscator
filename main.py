@@ -1,27 +1,3 @@
-from fastapi import FastAPI, Query
-from fastapi.responses import HTMLResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-import requests
-from bs4 import BeautifulSoup
-import re
-import os
-
-app = FastAPI()
-
-# Static files mount
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/", response_class=HTMLResponse)
-async def home():
-    try:
-        with open(os.path.join("static", "index.html"), "r", encoding="utf-8") as f:
-            html_content = f.read()
-        return HTMLResponse(content=html_content)
-    except FileNotFoundError:
-        return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
-    except Exception as e:
-        return HTMLResponse(content=f"<h1>Unexpected error: {str(e)}</h1>", status_code=500)
-
 @app.get("/html-obfuscator")
 def obfuscate_html(code: str = Query(None)):
     if not code:
@@ -61,14 +37,13 @@ def obfuscate_html(code: str = Query(None)):
 
         obfuscated_code = textarea.text
 
-        # Optional branding change in comment
         obfuscated_code = re.sub(
             r'<!-- Obfuscated at (.*?) on https://www\.phpkobo\.com/html-obfuscator -->',
             r'<!-- Obfuscated at \1 on HTML-OBFUSCATOR FastAPI -->',
             obfuscated_code
         )
 
-        return JSONResponse(content={"obfuscated_code": obfuscated_code}, indent=4)
+        return JSONResponse(content={"obfuscated_code": obfuscated_code})  # ✅ Fixed
 
     except requests.RequestException as req_err:
         return JSONResponse(
