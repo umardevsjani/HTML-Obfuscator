@@ -1,17 +1,15 @@
 from fastapi import FastAPI, Query
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
 from fastapi.staticfiles import StaticFiles
 import requests
 from bs4 import BeautifulSoup
 import re
 import os
-import json  # <-- Required for manual JSON formatting
+import json
 
 app = FastAPI()
 
-# Static folder mount
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 
 @app.get("/", response_class=HTMLResponse)
 async def home():
@@ -23,7 +21,6 @@ async def home():
         return HTMLResponse(content="<h1>index.html not found</h1>", status_code=404)
     except Exception as e:
         return HTMLResponse(content=f"<h1>Unexpected error: {str(e)}</h1>", status_code=500)
-
 
 @app.get("/html-obfuscator")
 def obfuscate_html(code: str = Query(None)):
@@ -64,16 +61,17 @@ def obfuscate_html(code: str = Query(None)):
 
         obfuscated_code = textarea.text
 
-        # Branding replace (optional)
         obfuscated_code = re.sub(
             r'<!-- Obfuscated at (.*?) on https://www\.phpkobo\.com/html-obfuscator -->',
             r'<!-- Obfuscated at \1 on HTML-OBFUSCATOR FastAPI -->',
             obfuscated_code
         )
 
-        # Return pretty-printed JSON manually
-        formatted_json = json.dumps({"obfuscated_code": obfuscated_code}, indent=4)
-        return HTMLResponse(content=formatted_json, media_type="application/json")
+        # RETURN RAW HTML TEXT, not JSON (safest)
+        return PlainTextResponse(content=obfuscated_code, media_type="text/html")
+
+        # Or if you still want JSON:
+        # return JSONResponse(content={"obfuscated_code": obfuscated_code})
 
     except requests.RequestException as req_err:
         return JSONResponse(
